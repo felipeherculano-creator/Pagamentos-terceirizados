@@ -1,298 +1,14 @@
-<!DOCTYPE html>
-<html lang="pt-BR">
-<head>
-<meta charset="UTF-8" />
-<meta name="viewport" content="width=device-width, initial-scale=1.0" />
-<title>Pagamentos Terceirizados</title>
-<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@2.44.0/tabler-icons.min.css" />
-<style>
-  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
-  :root {
-    --bg:#f5f5f4;--surface:#fff;--surface2:#f8f8f7;--border:#e5e4e0;--border2:#d0ceca;
-    --text:#1c1c1a;--text2:#6b6b67;--text3:#a3a39f;
-    --accent:#1a5fa8;--accent-bg:#e8f1fb;--accent-text:#0c3d72;
-    --green:#166534;--green-bg:#dcfce7;--red:#991b1b;--red-bg:#fee2e2;
-    --radius:10px;--radius-sm:6px;
-  }
-  @media(prefers-color-scheme:dark){:root{
-    --bg:#111110;--surface:#1c1c1a;--surface2:#242422;--border:#2e2e2b;--border2:#3a3a36;
-    --text:#e8e8e4;--text2:#9a9a94;--text3:#5a5a56;
-    --accent:#4a8fd4;--accent-bg:#0c2a4a;--accent-text:#93c5fd;
-    --green:#4ade80;--green-bg:#052e16;--red:#f87171;--red-bg:#450a0a;
-  }}
-  body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;background:var(--bg);color:var(--text);min-height:100vh;font-size:15px;line-height:1.6;}
-  #loginScreen{position:fixed;inset:0;background:var(--bg);display:flex;align-items:center;justify-content:center;z-index:999;padding:1.5rem;}
-  .login-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:2rem;width:100%;max-width:360px;}
-  .login-logo{width:44px;height:44px;background:var(--accent-bg);border-radius:var(--radius-sm);display:flex;align-items:center;justify-content:center;color:var(--accent);font-size:22px;margin-bottom:1.25rem;}
-  .login-card h2{font-size:17px;font-weight:600;margin-bottom:4px;}
-  .login-card p{font-size:13px;color:var(--text2);margin-bottom:1.5rem;}
-  .login-field{margin-bottom:12px;}
-  .login-field label{display:block;font-size:12px;font-weight:600;color:var(--text2);margin-bottom:6px;text-transform:uppercase;letter-spacing:.05em;}
-  .login-field input{width:100%;padding:9px 12px;border:1px solid var(--border);border-radius:var(--radius-sm);font-size:14px;font-family:inherit;background:var(--surface2);color:var(--text);outline:none;transition:border-color .15s;}
-  .login-field input:focus{border-color:var(--accent);}
-  .login-btn{width:100%;padding:10px;background:var(--accent);color:#fff;border:none;border-radius:var(--radius-sm);font-size:14px;font-weight:600;cursor:pointer;margin-top:4px;font-family:inherit;transition:opacity .15s;}
-  .login-btn:hover{opacity:.88;}
-  .login-error{font-size:12px;color:var(--red);margin-top:10px;text-align:center;min-height:18px;}
-  #appContent{display:none;}
-  .topbar{background:var(--surface);border-bottom:1px solid var(--border);padding:0 1.5rem;height:56px;display:flex;align-items:center;gap:10px;position:sticky;top:0;z-index:10;}
-  .topbar-icon{width:32px;height:32px;background:var(--accent-bg);border-radius:var(--radius-sm);display:flex;align-items:center;justify-content:center;color:var(--accent);font-size:18px;}
-  .topbar h1{font-size:15px;font-weight:600;color:var(--text);flex:1;}
-  .topbar-user{font-size:12px;color:var(--text2);display:flex;align-items:center;gap:6px;}
-  .topbar-user span{font-weight:600;color:var(--text);}
-  .btn-sair{padding:5px 12px;border-radius:var(--radius-sm);border:1px solid var(--border2);background:transparent;color:var(--text2);font-size:12px;cursor:pointer;font-family:inherit;}
-  .btn-sair:hover{background:var(--surface2);}
-  .main{max-width:960px;margin:0 auto;padding:2rem 1.5rem;}
-  .card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:1.25rem;margin-bottom:1.25rem;}
-  .card-label{font-size:12px;font-weight:600;color:var(--text2);text-transform:uppercase;letter-spacing:.06em;margin-bottom:10px;display:flex;align-items:center;gap:6px;}
-  textarea{width:100%;min-height:160px;border:1px solid var(--border);border-radius:var(--radius-sm);padding:10px 12px;font-size:14px;font-family:inherit;color:var(--text);background:var(--surface2);resize:vertical;outline:none;transition:border-color .15s;}
-  textarea:focus{border-color:var(--accent);}
-  textarea::placeholder{color:var(--text3);}
-  .btn-row{display:flex;gap:8px;margin-top:12px;flex-wrap:wrap;}
-  button{padding:8px 16px;border-radius:var(--radius-sm);border:1px solid var(--border2);background:var(--surface);color:var(--text);font-size:13px;font-weight:500;cursor:pointer;display:inline-flex;align-items:center;gap:6px;transition:background .12s,transform .1s;font-family:inherit;}
-  button:hover{background:var(--surface2);}
-  button:active{transform:scale(.97);}
-  button.primary{background:var(--accent);color:#fff;border-color:transparent;font-size:14px;padding:9px 20px;}
-  button.primary:hover{opacity:.88;}
-  button.ghost{border-color:transparent;background:transparent;color:var(--text2);}
-  button.ghost:hover{background:var(--surface2);color:var(--text);}
-  button.danger-btn{color:var(--red);border-color:var(--red-bg);}
-  button.danger-btn:hover{background:var(--red-bg);}
-  .section-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:1rem;gap:10px;flex-wrap:wrap;}
-  .section-title{font-size:15px;font-weight:600;color:var(--text);display:flex;align-items:center;gap:8px;}
-  .badge{font-size:11px;font-weight:600;padding:3px 9px;border-radius:20px;background:var(--accent-bg);color:var(--accent-text);}
-  .stats-row{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:10px;margin-bottom:1.25rem;}
-  .stat{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-sm);padding:14px 16px;}
-  .stat-label{font-size:11px;color:var(--text2);font-weight:600;text-transform:uppercase;letter-spacing:.05em;margin-bottom:4px;}
-  .stat-value{font-size:22px;font-weight:600;color:var(--text);}
-  .table-wrap{overflow-x:auto;border:1px solid var(--border);border-radius:var(--radius);}
-  table{width:100%;border-collapse:collapse;min-width:720px;}
-  thead th{background:var(--surface2);padding:10px 14px;font-size:11px;font-weight:700;color:var(--text2);text-transform:uppercase;letter-spacing:.05em;text-align:left;border-bottom:1px solid var(--border);white-space:nowrap;}
-  tbody td{padding:12px 14px;font-size:13px;color:var(--text);border-bottom:1px solid var(--border);vertical-align:middle;}
-  tbody tr:last-child td{border-bottom:none;}
-  tbody tr:hover td{background:var(--surface2);}
-  .tag{display:inline-flex;align-items:center;gap:4px;font-size:11px;font-weight:600;padding:2px 8px;border-radius:20px;background:var(--surface2);color:var(--text2);border:1px solid var(--border);}
-  .mono{font-family:'SF Mono','Fira Code',monospace;font-size:12px;}
-  .total-cell{font-weight:700;color:var(--green);}
-  .muted{color:var(--text3);}
-  .pago-badge{font-size:11px;font-weight:600;padding:2px 8px;border-radius:20px;background:var(--green-bg);color:var(--green);}
-  .pendente-badge{font-size:11px;font-weight:600;padding:2px 8px;border-radius:20px;background:var(--accent-bg);color:var(--accent-text);}
-  .actions-row{display:flex;gap:8px;margin-top:1rem;flex-wrap:wrap;padding-top:1rem;border-top:1px solid var(--border);}
-  .hidden{display:none;}
-  .empty-state{text-align:center;padding:3rem 1rem;color:var(--text2);}
-  .empty-state i{font-size:40px;display:block;margin-bottom:12px;color:var(--text3);}
-  .empty-state p{font-size:14px;}
-  .loading{text-align:center;padding:2rem;color:var(--text3);font-size:14px;}
-  .toast{position:fixed;bottom:1.5rem;right:1.5rem;background:var(--text);color:var(--surface);padding:10px 18px;border-radius:var(--radius-sm);font-size:13px;font-weight:500;opacity:0;transform:translateY(8px);transition:opacity .2s,transform .2s;pointer-events:none;z-index:100;}
-  .toast.show{opacity:1;transform:translateY(0);}
-  .btn-pago{padding:4px 10px;font-size:11px;border-radius:20px;}
-  @keyframes spin{from{transform:rotate(0deg)}to{transform:rotate(360deg)}}
-  @media(max-width:600px){.main{padding:1rem;}.topbar{padding:0 1rem;}}
-</style>
-</head>
-<body>
-
-<div id="loginScreen">
-  <div class="login-card">
-    <div class="login-logo"><i class="ti ti-coin"></i></div>
-    <h2>Pagamentos Terceirizados</h2>
-    <p>Identifique-se para continuar.</p>
-    <div class="login-field">
-      <label>Usuário</label>
-      <input type="text" id="loginUsuario" placeholder="seu usuário" onkeydown="if(event.key==='Enter')document.getElementById('loginSenha').focus()" />
-    </div>
-    <div class="login-field">
-      <label>Senha</label>
-      <input type="password" id="loginSenha" placeholder="••••••••" onkeydown="if(event.key==='Enter')entrar()" />
-    </div>
-    <button class="login-btn" onclick="entrar()">Entrar</button>
-    <div class="login-error" id="loginError"></div>
-  </div>
-</div>
-
-<div id="appContent">
-  <div class="topbar">
-    <div class="topbar-icon"><i class="ti ti-coin"></i></div>
-    <h1>Pagamentos Terceirizados</h1>
-    <div class="topbar-user">Olá, <span id="nomeUsuario"></span></div>
-    <button class="btn-sair" onclick="sair()"><i class="ti ti-logout"></i> Sair</button>
-  </div>
-
-  <div class="main">
-    <div id="painelEnvio">
-      <div class="card">
-        <div class="card-label"><i class="ti ti-message-2"></i> Colar mensagens do WhatsApp</div>
-        <textarea id="inputText" placeholder="Cole aqui as mensagens com os dados de pagamento dos técnicos..."></textarea>
-        <div class="btn-row">
-          <button class="primary" onclick="extrairESalvar()"><i class="ti ti-cloud-upload"></i> Extrair e enviar ao financeiro</button>
-          <button class="ghost" onclick="document.getElementById('inputText').value=''"><i class="ti ti-trash"></i> Limpar</button>
-        </div>
-      </div>
-    </div>
-
-    <div class="section-header">
-      <div class="section-title">
-        <i class="ti ti-list-check"></i> Pagamentos do dia
-        <span class="badge" id="countBadge">0</span>
-      </div>
-      <div style="display:flex;gap:8px;flex-wrap:wrap">
-        <button onclick="copiarTabela()"><i class="ti ti-table"></i> Copiar tabela</button>
-        <button onclick="copiarResumo()"><i class="ti ti-brand-whatsapp"></i> Copiar resumo</button>
-        <button id="btnLimparTudo" class="danger-btn hidden" onclick="confirmarLimpeza()"><i class="ti ti-trash"></i> Limpar tudo</button>
-      </div>
-    </div>
-
-    <div class="stats-row">
-      <div class="stat" id="statTotalCard"><div class="stat-label">Total a pagar</div><div class="stat-value" id="statTotal">R$ 0,00</div></div>
-      <div class="stat"><div class="stat-label">Ordens</div><div class="stat-value" id="statQtd">0</div></div>
-      <div class="stat"><div class="stat-label">Pagos</div><div class="stat-value" id="statPagos">0</div></div>
-    </div>
-
-    <div class="table-wrap">
-      <table>
-        <thead>
-          <tr>
-            <th>#</th><th>Enviado por</th><th>Beneficiário</th><th>Chave PIX / Banco</th>
-            <th>Cidade / UF</th><th>Referência</th><th class="col-total">Total</th><th>Status</th>
-          </tr>
-        </thead>
-        <tbody id="tableBody">
-          <tr><td colspan="8" class="loading"><i class="ti ti-loader" style="animation:spin 1s linear infinite;display:inline-block;margin-right:6px"></i>Carregando...</td></tr>
-        </tbody>
-      </table>
-    </div>
-  </div>
-</div>
-
-<div class="toast" id="toast"></div>
-
-<script type="module">
-import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
-import { getFirestore, collection, addDoc, onSnapshot, doc, updateDoc, deleteDoc, query, orderBy, writeBatch, getDocs } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
-
-const firebaseConfig = {
-  apiKey: "AIzaSyDvXyndqr3ZuUgWW-dDoPywXy6KcdZaRsc",
-  authDomain: "pagamentos-terceirizados.firebaseapp.com",
-  projectId: "pagamentos-terceirizados",
-  storageBucket: "pagamentos-terceirizados.firebasestorage.app",
-  messagingSenderId: "1057220730680",
-  appId: "1:1057220730680:web:86ce0002e5fb5475502bcd"
-};
-
-const fireApp = initializeApp(firebaseConfig);
-const db = getFirestore(fireApp);
-
-// ═══════════════════════════════════════════════════
-// USUARIOS — altere aqui os logins e senhas
-const USUARIOS = {
-  'admin':      { senha: 'admin123',      nome: 'Admin',      perfil: 'admin' },
-  'vanessa':    { senha: 'vanessa123',    nome: 'Vanessa',    perfil: 'operacional' },
-  'izadora':    { senha: 'izadora123',    nome: 'Izadora',    perfil: 'operacional' },
-  'financeiro': { senha: 'financeiro123', nome: 'Financeiro', perfil: 'financeiro' },
-};
-// ═══════════════════════════════════════════════════
-
-let usuarioAtual = null;
-let pagamentosCache = [];
-
-window.entrar = function() {
-  const u = document.getElementById('loginUsuario').value.trim().toLowerCase();
-  const s = document.getElementById('loginSenha').value;
-  const user = USUARIOS[u];
-  if (user && user.senha === s) {
-    usuarioAtual = { ...user, login: u };
-    sessionStorage.setItem('usuario', JSON.stringify(usuarioAtual));
-    iniciarApp();
-  } else {
-    const err = document.getElementById('loginError');
-    err.textContent = 'Usuário ou senha incorretos.';
-    document.getElementById('loginSenha').value = '';
-    setTimeout(() => err.textContent = '', 3000);
-  }
-};
-
-window.sair = function() {
-  sessionStorage.removeItem('usuario');
-  location.reload();
-};
-
-function iniciarApp() {
-  document.getElementById('loginScreen').style.display = 'none';
-  document.getElementById('appContent').style.display = 'block';
-  document.getElementById('nomeUsuario').textContent = usuarioAtual.nome;
-  if (usuarioAtual.perfil === 'financeiro') document.getElementById('painelEnvio').style.display = 'none';
-  if (usuarioAtual.perfil === 'admin') document.getElementById('btnLimparTudo').classList.remove('hidden');
-  const q = query(collection(db, 'pagamentos'), orderBy('criadoEm', 'asc'));
-  onSnapshot(q, snap => {
-    pagamentosCache = snap.docs.map(d => ({ id: d.id, ...d.data() }));
-    renderizar();
-  });
-}
-
-const sessao = sessionStorage.getItem('usuario');
-if (sessao) { usuarioAtual = JSON.parse(sessao); iniciarApp(); }
-
-window.extrairESalvar = async function() {
-  const texto = document.getElementById('inputText').value.trim();
-  if (!texto) return;
-  const lista = parsearMensagens(texto);
-  if (!lista.length) { mostrarToast('Nenhum pagamento encontrado no texto.'); return; }
-  for (const p of lista) {
-    await addDoc(collection(db, 'pagamentos'), { ...p, enviadoPor: usuarioAtual.nome, pago: false, criadoEm: new Date().toISOString() });
-  }
-  document.getElementById('inputText').value = '';
-  mostrarToast(lista.length + ' pagamento(s) enviado(s) ao financeiro!');
-};
-
-window.marcarPago = async function(id, pago) {
-  await updateDoc(doc(db, 'pagamentos', id), { pago: !pago });
-  mostrarToast(!pago ? 'Marcado como pago!' : 'Marcado como pendente.');
-};
-
-window.excluirPagamento = async function(id) {
-  if (!confirm('Excluir este pagamento?')) return;
-  await deleteDoc(doc(db, 'pagamentos', id));
-  mostrarToast('Excluído.');
-};
-
-window.confirmarLimpeza = async function() {
-  if (!confirm('Apagar TODOS os pagamentos?')) return;
-  const snap = await getDocs(collection(db, 'pagamentos'));
-  const batch = writeBatch(db);
-  snap.docs.forEach(d => batch.delete(d.ref));
-  await batch.commit();
-  mostrarToast('Todos os pagamentos foram apagados.');
-};
-
-function renderizar() {
-  const tbody = document.getElementById('tableBody');
-  const dados = pagamentosCache;
-  const podeMarcar = usuarioAtual.perfil === 'financeiro' || usuarioAtual.perfil === 'admin';
-  const podeExcluir = usuarioAtual.perfil === 'admin';
-  const verValores = usuarioAtual.perfil === 'admin' || usuarioAtual.perfil === 'financeiro';
-
-  // Mostra/oculta coluna Total no cabeçalho e card de total
-  document.querySelectorAll('.col-total').forEach(el => el.style.display = verValores ? '' : 'none');
-  document.getElementById('statTotalCard').style.display = verValores ? '' : 'none';
-
-  if (!dados.length) {
-    tbody.innerHTML = `<tr><td colspan="${verValores ? 8 : 7}"><div class="empty-state"><i class="ti ti-inbox"></i><p>Nenhum pagamento enviado ainda.</p></div></td></tr>`;
-    atualizarStats([]);
-    return;
-  }
-
-  tbody.innerHTML = dados.map((d, i) => {
-    const chave = [d.chavePix, d.banco].filter(Boolean).join(' · ') || '—';
-    const status = d.pago ? '<span class="pago-badge"><i class="ti ti-check" style="font-size:10px"></i> Pago</span>' : '<span class="pendente-badge">Pendente</span>';
-    const btnPago = podeMarcar ? `<button class="btn-pago ${d.pago ? 'danger-btn' : 'primary'}" onclick="marcarPago('${d.id}',${d.pago})" style="margin-left:6px">${d.pago ? 'Desfazer' : '✓ Pagar'}</button>` : '';
-    const btnDel = podeExcluir ? `<button class="ghost" style="padding:4px 8px;font-size:11px;margin-left:4px" onclick="excluirPagamento('${d.id}')"><i class="ti ti-trash"></i></button>` : '';
-    const tdTotal = verValores ? `<td class="total-cell">${d.totalTexto||'—'}</td>` : '';
+Totais agrupados por técnico, por cidade, ou por quem solicitou?style="font-size:10px"></i> Pago</span>':'<span class="pendente-badge">Pendente</span>';
+    const btnPago=podeMarcar?`<button class="btn-pago ${d.pago?'danger-btn':'primary'}" onclick="marcarPago('${d.id}',${d.pago})" style="margin-left:6px">${d.pago?'Desfazer':'✓ Pagar'}</button>`:'';
+    const btnDel=podeExcluir?`<button class="ghost" style="padding:4px 8px;font-size:11px;margin-left:4px" onclick="excluirPagamento('${d.id}')"><i class="ti ti-trash"></i></button>`:'';
+    const tdTotal=verValores?`<td class="total-cell">${d.totalTexto||'—'}</td>`:'';
     return `<tr>
       <td class="muted">${i+1}</td>
       <td><span class="tag">${d.enviadoPor||'—'}</span></td>
       <td style="font-weight:600">${d.beneficiario||'<span class="muted">—</span>'}</td>
       <td class="mono">${chave}</td>
       <td>${d.cidade||'<span class="muted">—</span>'}</td>
-      <td style="color:var(--text2);max-width:180px;font-size:12px">${d.descricao||'<span class="muted">—</span>'}</td>
+      <td style="color:var(--text2);max-width:160px;font-size:12px">${d.descricao||'<span class="muted">—</span>'}</td>
       ${tdTotal}
       <td style="white-space:nowrap">${status}${btnPago}${btnDel}</td>
     </tr>`;
@@ -300,49 +16,269 @@ function renderizar() {
   atualizarStats(dados);
 }
 
-function atualizarStats(dados) {
-  const verValores = usuarioAtual.perfil === 'admin' || usuarioAtual.perfil === 'financeiro';
-  const soma = dados.reduce((a,d)=>a+(d.total||0),0);
-  if (verValores) document.getElementById('statTotal').textContent = fmtMoeda(soma);
-  document.getElementById('statQtd').textContent = dados.length;
-  document.getElementById('statPagos').textContent = dados.filter(d=>d.pago).length;
-  document.getElementById('countBadge').textContent = dados.length;
+function atualizarStats(dados){
+  const verValores=usuarioAtual.perfil==='admin'||usuarioAtual.perfil==='financeiro';
+  const soma=dados.reduce((a,d)=>a+(d.total||0),0);
+  if(verValores) document.getElementById('statTotal').textContent=fmtMoeda(soma);
+  document.getElementById('statQtd').textContent=dados.length;
+  document.getElementById('statPagos').textContent=dados.filter(d=>d.pago).length;
+  document.getElementById('countBadge').textContent=dados.length;
 }
 
-window.copiarTabela = function() {
-  const h = ['#','Enviado por','Beneficiário','Chave PIX','Banco','Cidade','Referência','Total','Status'];
-  const r = pagamentosCache.map((d,i)=>[i+1,d.enviadoPor,d.beneficiario,d.chavePix,d.banco,d.cidade,d.descricao,d.totalTexto,d.pago?'Pago':'Pendente']);
-  navigator.clipboard.writeText([h,...r].map(x=>x.join('\t')).join('\n')).then(()=>mostrarToast('Tabela copiada!'));
-};
-
-window.copiarResumo = function() {
-  const verValores = usuarioAtual.perfil === 'admin' || usuarioAtual.perfil === 'financeiro';
-  const soma = pagamentosCache.reduce((a,d)=>a+(d.total||0),0);
-  const data = new Date().toLocaleDateString('pt-BR');
-  const totalLinha = verValores ? ` · Total: ${fmtMoeda(soma)}` : '';
-  let txt = `*PAGAMENTOS TERCEIRIZADOS — ${data}*\n_${pagamentosCache.length} ordem(ns)${totalLinha}_\n\n`;
-  pagamentosCache.forEach((d,i)=>{
+window.copiarResumo=function(){
+  const verValores=usuarioAtual.perfil==='admin'||usuarioAtual.perfil==='financeiro';
+  const soma=pagamentosHoje.reduce((a,d)=>a+(d.total||0),0);
+  const data=new Date().toLocaleDateString('pt-BR');
+  const totalLinha=verValores?` · Total: ${fmtMoeda(soma)}`:'';
+  let txt=`*PAGAMENTOS — ${data}*\n_${pagamentosHoje.length} ordem(ns)${totalLinha}_\n\n`;
+  pagamentosHoje.forEach((d,i)=>{
     txt+=`*${i+1}. ${d.beneficiario||'—'}*\n`;
     if(d.chavePix)txt+=`Chave: ${d.chavePix}\n`;
     if(d.banco)txt+=`Banco: ${d.banco}\n`;
     if(d.cidade)txt+=`Local: ${d.cidade}\n`;
     if(d.descricao)txt+=`Ref.: ${d.descricao}\n`;
-    if(verValores)txt+=`Total: *${d.totalTexto}* — ${d.pago?'✅ Pago':'⏳ Pendente'}\n`;
-    else txt+=`Status: ${d.pago?'✅ Pago':'⏳ Pendente'}\n`;
-    txt+='\n';
+    if(verValores)txt+=`Total: *${d.totalTexto}*\n`;
+    txt+=`Status: ${d.pago?'✅ Pago':'⏳ Pendente'}\n\n`;
   });
   navigator.clipboard.writeText(txt).then(()=>mostrarToast('Resumo copiado!'));
 };
 
-function fmtMoeda(v){return 'R$ '+v.toLocaleString('pt-BR',{minimumFractionDigits:2,maximumFractionDigits:2});}
-function xMoeda(t){const m=t.match(/R\$\s*([\d.,]+)/);if(!m)return 0;return parseFloat(m[1].replace(/\./g,'').replace(',','.'))||0;}
+// ═══════════════ RELATÓRIO ═══════════════
 
-window.mostrarToast = function(msg){
-  const t=document.getElementById('toast');
-  t.textContent=msg;t.classList.add('show');
-  setTimeout(()=>t.classList.remove('show'),2500);
+function primeiroDiaMes(d){ return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-01`; }
+function ultimoDiaMes(d){ const u=new Date(d.getFullYear(),d.getMonth()+1,0); return `${u.getFullYear()}-${String(u.getMonth()+1).padStart(2,'0')}-${String(u.getDate()).padStart(2,'0')}`; }
+
+window.filtroMesAtual=function(){
+  const d=new Date();
+  document.getElementById('filtroInicio').value=primeiroDiaMes(d);
+  document.getElementById('filtroFim').value=ultimoDiaMes(d);
+};
+window.filtroMesAnterior=function(){
+  const d=new Date(); d.setMonth(d.getMonth()-1);
+  document.getElementById('filtroInicio').value=primeiroDiaMes(d);
+  document.getElementById('filtroFim').value=ultimoDiaMes(d);
+};
+window.filtro7dias=function(){
+  const fim=new Date(); const ini=new Date(); ini.setDate(ini.getDate()-6);
+  document.getElementById('filtroInicio').value=`${ini.getFullYear()}-${String(ini.getMonth()+1).padStart(2,'0')}-${String(ini.getDate()).padStart(2,'0')}`;
+  document.getElementById('filtroFim').value=`${fim.getFullYear()}-${String(fim.getMonth()+1).padStart(2,'0')}-${String(fim.getDate()).padStart(2,'0')}`;
 };
 
+window.gerarRelatorio=async function(){
+  const ini=document.getElementById('filtroInicio').value;
+  const fim=document.getElementById('filtroFim').value;
+  if(!ini||!fim){ mostrarToast('Selecione o período.'); return; }
+
+  mostrarToast('Buscando dados...');
+
+  const q=query(collection(db,'pagamentos'), where('data','>=',ini), where('data','<=',fim), orderBy('data','asc'), orderBy('criadoEm','asc'));
+  const snap=await getDocs(q);
+  dadosRelatorio=snap.docs.map(d=>({id:d.id,...d.data()}));
+
+  document.getElementById('relatorioResultado').classList.add('hidden');
+  document.getElementById('relatorioVazio').classList.add('hidden');
+
+  if(!dadosRelatorio.length){ document.getElementById('relatorioVazio').classList.remove('hidden'); return; }
+
+  const agrupar=document.getElementById('agruparPor').value;
+  renderizarRelatorio(dadosRelatorio, agrupar, ini, fim);
+};
+
+function renderizarRelatorio(dados, agrupar, ini, fim){
+  const soma=dados.reduce((a,d)=>a+(d.total||0),0);
+  const pagos=dados.filter(d=>d.pago).length;
+  const somaPagos=dados.filter(d=>d.pago).reduce((a,d)=>a+(d.total||0),0);
+
+  document.getElementById('relBadge').textContent=`${fmtData(ini)} a ${fmtData(fim)}`;
+  document.getElementById('relStats').innerHTML=`
+    <div class="stat"><div class="stat-label">Total do período</div><div class="stat-value">${fmtMoeda(soma)}</div></div>
+    <div class="stat"><div class="stat-label">Ordens</div><div class="stat-value">${dados.length}</div></div>
+    <div class="stat"><div class="stat-label">Pagas</div><div class="stat-value">${pagos}</div></div>
+    <div class="stat"><div class="stat-label">Total pago</div><div class="stat-value">${fmtMoeda(somaPagos)}</div></div>
+    <div class="stat"><div class="stat-label">A pagar</div><div class="stat-value">${fmtMoeda(soma-somaPagos)}</div></div>
+  `;
+
+  // Agrupa
+  const chaveGrupo = d => {
+    if(agrupar==='tecnico') return d.beneficiario||'(sem nome)';
+    if(agrupar==='solicitante') return d.enviadoPor||'(sem solicitante)';
+    if(agrupar==='cidade') return d.cidade||'(sem cidade)';
+    if(agrupar==='data') return d.data||'(sem data)';
+    return '—';
+  };
+
+  const grupos={};
+  dados.forEach(d=>{ const k=chaveGrupo(d); if(!grupos[k])grupos[k]=[]; grupos[k].push(d); });
+
+  const labelGrupo={tecnico:'Técnico',solicitante:'Solicitante',cidade:'Cidade',data:'Data'}[agrupar];
+
+  document.getElementById('relGrupos').innerHTML=Object.entries(grupos).sort((a,b)=>{
+    const sa=a[1].reduce((x,d)=>x+(d.total||0),0);
+    const sb=b[1].reduce((x,d)=>x+(d.total||0),0);
+    return sb-sa;
+  }).map(([chave,itens])=>{
+    const subtotal=itens.reduce((a,d)=>a+(d.total||0),0);
+    const tituloChave=agrupar==='data'?fmtData(chave):chave;
+    const linhas=itens.map((d,i)=>`
+      <tr>
+        <td class="muted">${i+1}</td>
+        <td>${fmtData(d.data)}</td>
+        <td style="font-weight:600">${d.beneficiario||'—'}</td>
+        <td><span class="tag">${d.enviadoPor||'—'}</span></td>
+        <td>${d.cidade||'—'}</td>
+        <td style="color:var(--text2);max-width:160px;font-size:11px">${d.descricao||'—'}</td>
+        <td class="total-cell">${d.totalTexto||'—'}</td>
+        <td>${d.pago?'<span class="pago-badge">Pago</span>':'<span class="pendente-badge">Pendente</span>'}</td>
+      </tr>`).join('');
+    return `<div class="grupo-card">
+      <div class="grupo-header" onclick="toggleGrupo(this)">
+        <div>
+          <span style="font-size:10px;color:var(--text3);text-transform:uppercase;letter-spacing:.05em;">${labelGrupo}</span>
+          <div class="grupo-titulo">${tituloChave}</div>
+        </div>
+        <div style="display:flex;align-items:center;gap:12px">
+          <span style="font-size:12px;color:var(--text2)">${itens.length} ordem(ns)</span>
+          <span class="grupo-total">${fmtMoeda(subtotal)}</span>
+          <i class="ti ti-chevron-down" style="color:var(--text3)"></i>
+        </div>
+      </div>
+      <div class="grupo-body">
+        <div class="table-wrap" style="border:none;border-radius:0;margin:0">
+          <table>
+            <thead><tr><th>#</th><th>Data</th><th>Beneficiário</th><th>Solicitante</th><th>Cidade</th><th>Referência</th><th>Total</th><th>Status</th></tr></thead>
+            <tbody>${linhas}</tbody>
+          </table>
+        </div>
+      </div>
+    </div>`;
+  }).join('');
+
+  document.getElementById('relatorioResultado').classList.remove('hidden');
+}
+
+window.toggleGrupo=function(header){
+  const body=header.nextElementSibling;
+  const icon=header.querySelector('.ti-chevron-down, .ti-chevron-up');
+  if(body.style.display==='none'){ body.style.display=''; icon.className='ti ti-chevron-down'; }
+  else { body.style.display='none'; icon.className='ti ti-chevron-up'; }
+};
+
+// EXPORTAR EXCEL
+window.exportarExcel=function(){
+  if(!dadosRelatorio.length){ mostrarToast('Gere o relatório primeiro.'); return; }
+  const ini=document.getElementById('filtroInicio').value;
+  const fim=document.getElementById('filtroFim').value;
+  const wb=XLSX.utils.book_new();
+
+  // Aba: todos os registros
+  const linhas=[['Data','Enviado por','Beneficiário','Chave PIX','Banco','Cidade','Referência','Total','Status']];
+  dadosRelatorio.forEach(d=>linhas.push([
+    fmtData(d.data), d.enviadoPor||'', d.beneficiario||'', d.chavePix||'', d.banco||'',
+    d.cidade||'', d.descricao||'', d.total||0, d.pago?'Pago':'Pendente'
+  ]));
+  const ws=XLSX.utils.aoa_to_sheet(linhas);
+  ws['!cols']=[{wch:12},{wch:14},{wch:28},{wch:28},{wch:14},{wch:18},{wch:30},{wch:12},{wch:10}];
+  XLSX.utils.book_append_sheet(wb,ws,'Registros');
+
+  // Aba: resumo por técnico
+  const porTec={};
+  dadosRelatorio.forEach(d=>{ const k=d.beneficiario||'(sem nome)'; if(!porTec[k])porTec[k]={qtd:0,total:0,pagos:0}; porTec[k].qtd++; porTec[k].total+=d.total||0; if(d.pago)porTec[k].pagos++; });
+  const lt=[['Técnico','Ordens','Total','Pagos','A receber']];
+  Object.entries(porTec).sort((a,b)=>b[1].total-a[1].total).forEach(([k,v])=>lt.push([k,v.qtd,v.total,v.pagos,v.total]));
+  lt.push(['TOTAL',dadosRelatorio.length,dadosRelatorio.reduce((a,d)=>a+(d.total||0),0),'','']);
+  const wt=XLSX.utils.aoa_to_sheet(lt);
+  wt['!cols']=[{wch:28},{wch:8},{wch:14},{wch:8},{wch:14}];
+  XLSX.utils.book_append_sheet(wb,wt,'Por Técnico');
+
+  // Aba: resumo por cidade
+  const porCid={};
+  dadosRelatorio.forEach(d=>{ const k=d.cidade||'(sem cidade)'; if(!porCid[k])porCid[k]={qtd:0,total:0}; porCid[k].qtd++; porCid[k].total+=d.total||0; });
+  const lc=[['Cidade','Ordens','Total']];
+  Object.entries(porCid).sort((a,b)=>b[1].total-a[1].total).forEach(([k,v])=>lc.push([k,v.qtd,v.total]));
+  const wc=XLSX.utils.aoa_to_sheet(lc);
+  wc['!cols']=[{wch:20},{wch:8},{wch:14}];
+  XLSX.utils.book_append_sheet(wb,wc,'Por Cidade');
+
+  // Aba: resumo por solicitante
+  const porSol={};
+  dadosRelatorio.forEach(d=>{ const k=d.enviadoPor||'(sem solicitante)'; if(!porSol[k])porSol[k]={qtd:0,total:0}; porSol[k].qtd++; porSol[k].total+=d.total||0; });
+  const ls=[['Solicitante','Ordens','Total']];
+  Object.entries(porSol).sort((a,b)=>b[1].total-a[1].total).forEach(([k,v])=>ls.push([k,v.qtd,v.total]));
+  const ws2=XLSX.utils.aoa_to_sheet(ls);
+  ws2['!cols']=[{wch:20},{wch:8},{wch:14}];
+  XLSX.utils.book_append_sheet(wb,ws2,'Por Solicitante');
+
+  XLSX.writeFile(wb,`pagamentos_${ini}_${fim}.xlsx`);
+  mostrarToast('Excel exportado!');
+};
+
+// EXPORTAR PDF
+window.exportarPDF=function(){
+  if(!dadosRelatorio.length){ mostrarToast('Gere o relatório primeiro.'); return; }
+  const ini=document.getElementById('filtroInicio').value;
+  const fim=document.getElementById('filtroFim').value;
+  const soma=dadosRelatorio.reduce((a,d)=>a+(d.total||0),0);
+  const pagos=dadosRelatorio.filter(d=>d.pago);
+  const somaPagos=pagos.reduce((a,d)=>a+(d.total||0),0);
+
+  // Resumos
+  const porTec={};
+  dadosRelatorio.forEach(d=>{ const k=d.beneficiario||'(sem nome)'; if(!porTec[k])porTec[k]={qtd:0,total:0}; porTec[k].qtd++; porTec[k].total+=d.total||0; });
+  const porCid={};
+  dadosRelatorio.forEach(d=>{ const k=d.cidade||'(sem cidade)'; if(!porCid[k])porCid[k]={qtd:0,total:0}; porCid[k].qtd++; porCid[k].total+=d.total||0; });
+  const porSol={};
+  dadosRelatorio.forEach(d=>{ const k=d.enviadoPor||'(sem solicitante)'; if(!porSol[k])porSol[k]={qtd:0,total:0}; porSol[k].qtd++; porSol[k].total+=d.total||0; });
+
+  const tabelaResmo=(titulo,dados)=>`
+    <h3 style="margin:18px 0 6px;font-size:13px;color:#444;">${titulo}</h3>
+    <table><thead><tr><th>Nome</th><th>Ordens</th><th>Total</th></tr></thead><tbody>
+    ${Object.entries(dados).sort((a,b)=>b[1].total-a[1].total).map(([k,v])=>`<tr><td>${k}</td><td style="text-align:center">${v.qtd}</td><td style="text-align:right;font-weight:600;color:#166534">${fmtMoeda(v.total)}</td></tr>`).join('')}
+    </tbody></table>`;
+
+  const tabelaDetalhe=`
+    <h3 style="margin:18px 0 6px;font-size:13px;color:#444;">Detalhamento completo</h3>
+    <table><thead><tr><th>Data</th><th>Técnico</th><th>Solicitante</th><th>Cidade</th><th>Total</th><th>Status</th></tr></thead><tbody>
+    ${dadosRelatorio.map(d=>`<tr><td>${fmtData(d.data)}</td><td>${d.beneficiario||'—'}</td><td>${d.enviadoPor||'—'}</td><td>${d.cidade||'—'}</td><td style="text-align:right;font-weight:600;color:#166534">${d.totalTexto||'—'}</td><td>${d.pago?'✅ Pago':'⏳ Pendente'}</td></tr>`).join('')}
+    </tbody></table>`;
+
+  const html=`<!DOCTYPE html><html><head><meta charset="UTF-8"><title>Relatório</title>
+  <style>
+    body{font-family:Arial,sans-serif;font-size:12px;color:#1c1c1a;padding:2cm;}
+    h1{font-size:18px;margin-bottom:4px;}
+    .sub{color:#666;font-size:12px;margin-bottom:20px;}
+    .stats{display:flex;gap:16px;margin-bottom:20px;flex-wrap:wrap;}
+    .stat{background:#f5f5f4;border-radius:6px;padding:10px 14px;min-width:120px;}
+    .stat-label{font-size:10px;color:#666;text-transform:uppercase;letter-spacing:.05em;}
+    .stat-value{font-size:18px;font-weight:700;color:#1c1c1a;}
+    table{width:100%;border-collapse:collapse;margin-bottom:8px;}
+    th{background:#f5f5f4;padding:7px 10px;font-size:10px;text-align:left;border-bottom:1px solid #e5e4e0;text-transform:uppercase;letter-spacing:.04em;}
+    td{padding:7px 10px;border-bottom:1px solid #eee;font-size:11px;}
+    h3{color:#1a5fa8;}
+    @media print{body{padding:1cm;}}
+  </style></head><body>
+  <h1>Relatório de Pagamentos</h1>
+  <div class="sub">Período: ${fmtData(ini)} a ${fmtData(fim)} · Gerado em ${new Date().toLocaleString('pt-BR')}</div>
+  <div class="stats">
+    <div class="stat"><div class="stat-label">Total do período</div><div class="stat-value">${fmtMoeda(soma)}</div></div>
+    <div class="stat"><div class="stat-label">Ordens</div><div class="stat-value">${dadosRelatorio.length}</div></div>
+    <div class="stat"><div class="stat-label">Pagas</div><div class="stat-value">${pagos.length}</div></div>
+    <div class="stat"><div class="stat-label">Total pago</div><div class="stat-value">${fmtMoeda(somaPagos)}</div></div>
+    <div class="stat"><div class="stat-label">A pagar</div><div class="stat-value">${fmtMoeda(soma-somaPagos)}</div></div>
+  </div>
+  ${tabelaResmo('Por técnico',porTec)}
+  ${tabelaResmo('Por cidade',porCid)}
+  ${tabelaResmo('Por solicitante',porSol)}
+  ${tabelaDetalhe}
+  </body></html>`;
+
+  const win=window.open('','_blank');
+  win.document.write(html);
+  win.document.close();
+  win.onload=()=>{ win.print(); };
+  mostrarToast('PDF aberto para impressão!');
+};
+
+// ═══════════════ PARSER ═══════════════
 function parsearMensagens(texto){
   const linhas=texto.split('\n');
   const blocos=[];let atual=[],solAtual='';
@@ -379,7 +315,7 @@ function parsearBloco(bloco,solicitantePai){
     if(l.includes('👤')){let v=linha.replace(/.*👤\s*\|\s*/,'').trim().replace(/^\d{8,14}\s+/,'').trim();if(v)r.beneficiario=v;continue;}
     if(l.includes('🪛')||(l.includes('referente')&&l.includes('|'))){r.descricao=linha.replace(/.*(?:🪛\s*\|\s*)/i,'').replace(/.*\|\s*/,'').trim().replace(/^referente\s*(ao?|à)?\s*/i,'').trim();continue;}
     if(l.includes('🌃')){r.cidade=linha.replace(/.*🌃\s*\|\s*/,'').trim();continue;}
-    if(l.includes('💸')||(l.includes('total')&&l.includes('|'))){r.total=xMoeda(linha);r.totalTexto=fmtMoeda(r.total);continue;}
+    if(l.includes('💸')||(l.includes('total')&&l.includes('|'))){r.total=xMoeda(linha);r.totalTexto='R$ '+r.total.toLocaleString('pt-BR',{minimumFractionDigits:2,maximumFractionDigits:2});continue;}
   }
   if(!r.beneficiario&&!r.chavePix&&!r.total)return null;
   return r;
