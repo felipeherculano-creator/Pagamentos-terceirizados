@@ -1,0 +1,585 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Extrator de Pagamentos — Terceirizados</title>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@2.44.0/tabler-icons.min.css" />
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --bg: #f5f5f4;
+    --surface: #ffffff;
+    --surface2: #f8f8f7;
+    --border: #e5e4e0;
+    --border2: #d0ceca;
+    --text: #1c1c1a;
+    --text2: #6b6b67;
+    --text3: #a3a39f;
+    --accent: #1a5fa8;
+    --accent-bg: #e8f1fb;
+    --accent-text: #0c3d72;
+    --green: #166534;
+    --green-bg: #dcfce7;
+    --red: #991b1b;
+    --red-bg: #fee2e2;
+    --radius: 10px;
+    --radius-sm: 6px;
+  }
+
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #111110;
+      --surface: #1c1c1a;
+      --surface2: #242422;
+      --border: #2e2e2b;
+      --border2: #3a3a36;
+      --text: #e8e8e4;
+      --text2: #9a9a94;
+      --text3: #5a5a56;
+      --accent: #4a8fd4;
+      --accent-bg: #0c2a4a;
+      --accent-text: #93c5fd;
+      --green: #4ade80;
+      --green-bg: #052e16;
+      --red: #f87171;
+      --red-bg: #450a0a;
+    }
+  }
+
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    min-height: 100vh;
+    font-size: 15px;
+    line-height: 1.6;
+  }
+
+  .topbar {
+    background: var(--surface);
+    border-bottom: 1px solid var(--border);
+    padding: 0 1.5rem;
+    height: 56px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    position: sticky;
+    top: 0;
+    z-index: 10;
+  }
+
+  .topbar-icon {
+    width: 32px; height: 32px;
+    background: var(--accent-bg);
+    border-radius: var(--radius-sm);
+    display: flex; align-items: center; justify-content: center;
+    color: var(--accent);
+    font-size: 18px;
+  }
+
+  .topbar h1 { font-size: 15px; font-weight: 600; color: var(--text); }
+  .topbar span { font-size: 13px; color: var(--text3); margin-left: 4px; }
+
+  .main { max-width: 900px; margin: 0 auto; padding: 2rem 1.5rem; }
+
+  .card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 1.25rem;
+    margin-bottom: 1.25rem;
+  }
+
+  .card-label {
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--text2);
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    margin-bottom: 10px;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+
+  textarea {
+    width: 100%;
+    min-height: 180px;
+    border: 1px solid var(--border);
+    border-radius: var(--radius-sm);
+    padding: 10px 12px;
+    font-size: 14px;
+    font-family: inherit;
+    color: var(--text);
+    background: var(--surface2);
+    resize: vertical;
+    outline: none;
+    transition: border-color 0.15s;
+  }
+
+  textarea:focus { border-color: var(--accent); }
+  textarea::placeholder { color: var(--text3); }
+
+  .btn-row { display: flex; gap: 8px; margin-top: 12px; flex-wrap: wrap; }
+
+  button {
+    padding: 8px 16px;
+    border-radius: var(--radius-sm);
+    border: 1px solid var(--border2);
+    background: var(--surface);
+    color: var(--text);
+    font-size: 13px;
+    font-weight: 500;
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    transition: background 0.12s, border-color 0.12s, transform 0.1s;
+    font-family: inherit;
+  }
+
+  button:hover { background: var(--surface2); border-color: var(--border2); }
+  button:active { transform: scale(0.97); }
+
+  button.primary {
+    background: var(--accent);
+    color: #fff;
+    border-color: transparent;
+    font-size: 14px;
+    padding: 9px 20px;
+  }
+
+  button.primary:hover { opacity: 0.88; }
+
+  button.ghost {
+    border-color: transparent;
+    background: transparent;
+    color: var(--text2);
+    font-size: 13px;
+  }
+
+  button.ghost:hover { background: var(--surface2); color: var(--text); }
+
+  .section-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 1rem;
+    gap: 10px;
+    flex-wrap: wrap;
+  }
+
+  .section-title {
+    font-size: 15px;
+    font-weight: 600;
+    color: var(--text);
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  .badge {
+    font-size: 11px;
+    font-weight: 600;
+    padding: 3px 9px;
+    border-radius: 20px;
+    background: var(--accent-bg);
+    color: var(--accent-text);
+  }
+
+  .stats-row {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+    gap: 10px;
+    margin-bottom: 1.25rem;
+  }
+
+  .stat {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-sm);
+    padding: 14px 16px;
+  }
+
+  .stat-label { font-size: 11px; color: var(--text2); font-weight: 600; text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 4px; }
+  .stat-value { font-size: 22px; font-weight: 600; color: var(--text); }
+
+  .table-wrap {
+    overflow-x: auto;
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+  }
+
+  table { width: 100%; border-collapse: collapse; min-width: 680px; }
+
+  thead th {
+    background: var(--surface2);
+    padding: 10px 14px;
+    font-size: 11px;
+    font-weight: 700;
+    color: var(--text2);
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    text-align: left;
+    border-bottom: 1px solid var(--border);
+    white-space: nowrap;
+  }
+
+  tbody td {
+    padding: 12px 14px;
+    font-size: 13px;
+    color: var(--text);
+    border-bottom: 1px solid var(--border);
+    vertical-align: top;
+  }
+
+  tbody tr:last-child td { border-bottom: none; }
+  tbody tr:hover td { background: var(--surface2); }
+
+  .tag {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    font-size: 11px;
+    font-weight: 600;
+    padding: 2px 8px;
+    border-radius: 20px;
+    background: var(--surface2);
+    color: var(--text2);
+    border: 1px solid var(--border);
+  }
+
+  .mono { font-family: 'SF Mono', 'Fira Code', monospace; font-size: 12px; }
+  .total-cell { font-weight: 700; color: var(--green); }
+  .muted { color: var(--text3); }
+
+  .actions-row {
+    display: flex;
+    gap: 8px;
+    margin-top: 1rem;
+    flex-wrap: wrap;
+    padding-top: 1rem;
+    border-top: 1px solid var(--border);
+  }
+
+  .hidden { display: none; }
+
+  .empty-state {
+    text-align: center;
+    padding: 3rem 1rem;
+    color: var(--text2);
+  }
+
+  .empty-state i { font-size: 40px; display: block; margin-bottom: 12px; color: var(--text3); }
+  .empty-state p { font-size: 14px; }
+
+  .toast {
+    position: fixed;
+    bottom: 1.5rem;
+    right: 1.5rem;
+    background: var(--text);
+    color: var(--surface);
+    padding: 10px 18px;
+    border-radius: var(--radius-sm);
+    font-size: 13px;
+    font-weight: 500;
+    opacity: 0;
+    transform: translateY(8px);
+    transition: opacity 0.2s, transform 0.2s;
+    pointer-events: none;
+    z-index: 100;
+  }
+
+  .toast.show { opacity: 1; transform: translateY(0); }
+
+  @media (max-width: 600px) {
+    .main { padding: 1rem; }
+    .topbar { padding: 0 1rem; }
+  }
+</style>
+</head>
+<body>
+
+<div class="topbar">
+  <div class="topbar-icon"><i class="ti ti-coin"></i></div>
+  <h1>Pagamentos Terceirizados</h1>
+  <span>— Extrator automático</span>
+</div>
+
+<div class="main">
+
+  <div class="card">
+    <div class="card-label"><i class="ti ti-message-2"></i> Mensagens do WhatsApp</div>
+    <textarea id="inputText" placeholder="Cole aqui as mensagens com os dados de pagamento dos técnicos...&#10;&#10;Ex:&#10;Vanessa:&#10;🔑| Chave: CNPJ 15612700000104&#10;👤| Nome do técnico&#10;💸| Total: R$100,00"></textarea>
+    <div class="btn-row">
+      <button class="primary" onclick="processar()"><i class="ti ti-sparkles"></i> Extrair pagamentos</button>
+      <button onclick="usarExemplo()"><i class="ti ti-file-text"></i> Carregar exemplo</button>
+      <button class="ghost" onclick="limpar()"><i class="ti ti-trash"></i> Limpar</button>
+    </div>
+  </div>
+
+  <div id="resultSection" class="hidden">
+    <div class="section-header">
+      <div class="section-title">
+        <i class="ti ti-list-check"></i>
+        Pagamentos identificados
+        <span class="badge" id="countBadge"></span>
+      </div>
+    </div>
+
+    <div class="stats-row" id="statsRow"></div>
+
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr>
+            <th>#</th>
+            <th>Solicitante</th>
+            <th>Beneficiário</th>
+            <th>Chave PIX / Banco</th>
+            <th>Cidade / UF</th>
+            <th>Referência</th>
+            <th>Total</th>
+          </tr>
+        </thead>
+        <tbody id="tableBody"></tbody>
+      </table>
+    </div>
+
+    <div class="actions-row">
+      <button onclick="copiarTabela()"><i class="ti ti-table"></i> Copiar tabela</button>
+      <button onclick="copiarCSV()"><i class="ti ti-file-spreadsheet"></i> Copiar CSV</button>
+      <button onclick="copiarResumo()"><i class="ti ti-brand-whatsapp"></i> Copiar resumo</button>
+    </div>
+  </div>
+
+  <div id="emptyState" class="empty-state hidden">
+    <i class="ti ti-search-off"></i>
+    <p>Nenhum pagamento encontrado.<br>Verifique o formato das mensagens.</p>
+  </div>
+
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+const EXEMPLO = `Vanessa:
+🔑| Chave: Cnpj 15612700000104
+💳| Banco: 
+👤| Odilon Figueiredo Porto Neto
+🪛| Referente ao serviço na Gerdau.
+🌃| Aracaju/SE
+📹| Levantamento para câmeras.
+👷🏼‍♂️| Mão de Obra:R$100,00
+💸| Total: R$100,00
+
+
+Izadora Alves: 
+🔑| Chave PIX: Celular - 88996419085
+👤| Rafael de Araújo Lemos
+🪛| Referente ao manutenção  na Pague Menos loja 1008
+🌃| Santa Quitéria/CE
+📹| Manutenção no sistema de câmeras
+🚗| Visita: R$140,00
+👷🏼‍♂️| Serviço:R$200,00
+💸| Total:R$340,00
+
+Vanessa:
+🔑| Chave: CNPJ 51209202000189
+💳| Banco: Nubank
+👤| 51209202 William Sena Machado
+🪛| Referente manutenção Pague Menos loja 848
+🌃| Campo Formoso/BA
+📹| Falha de comunicação, 2 visitas, resolvido.
+👷🏼‍♂️| Mão de obra: R$130,00 + deslocamento R$80,00
+💸| Total: R$210,00`;
+
+let dados = [];
+
+function usarExemplo() { document.getElementById('inputText').value = EXEMPLO; }
+
+function limpar() {
+  document.getElementById('inputText').value = '';
+  document.getElementById('resultSection').classList.add('hidden');
+  document.getElementById('emptyState').classList.add('hidden');
+  dados = [];
+}
+
+function formatarMoeda(v) {
+  return 'R$ ' + v.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+}
+
+function extrairMoeda(texto) {
+  const m = texto.match(/R\$\s*([\d.,]+)/);
+  if (!m) return 0;
+  return parseFloat(m[1].replace(/\./g, '').replace(',', '.')) || 0;
+}
+
+function processarBloco(bloco) {
+  const linhas = bloco.split('\n').map(l => l.trim()).filter(Boolean);
+  if (linhas.length < 2) return null;
+
+  const r = { solicitante: '', beneficiario: '', chavePix: '', banco: '', cidade: '', descricao: '', total: 0, totalTexto: '' };
+
+  // Primeira linha como solicitante se não tiver emoji/pipe
+  if (linhas[0].match(/^[A-ZÀ-Ú]/) && !linhas[0].includes('|') && !linhas[0].includes('🔑')) {
+    r.solicitante = linhas[0].replace(/:$/, '').trim();
+  }
+
+  for (const linha of linhas) {
+    const l = linha.toLowerCase();
+
+    if (l.includes('🔑') || (l.includes('chave') && l.includes('|'))) {
+      let v = linha.replace(/.*(?:🔑\s*\|\s*|chave\s*pix\s*:\s*|chave\s*:\s*)/i, '').trim();
+      r.chavePix = v;
+      continue;
+    }
+    if (l.includes('💳') || (l.includes('banco') && l.includes('|'))) {
+      let v = linha.replace(/.*(?:💳\s*\|\s*|banco\s*:\s*)/i, '').trim();
+      r.banco = v;
+      continue;
+    }
+    if (l.includes('👤')) {
+      let v = linha.replace(/.*👤\s*\|\s*/, '').trim();
+      v = v.replace(/^\d{8,14}\s+/, '').trim();
+      if (v) r.beneficiario = v;
+      continue;
+    }
+    if (l.includes('🪛') || (l.includes('referente') && l.includes('|'))) {
+      let v = linha.replace(/.*(?:🪛\s*\|\s*)/i, '').replace(/.*\|\s*/,'').trim();
+      v = v.replace(/^referente\s*(ao?|à)?\s*/i, '').trim();
+      r.descricao = v;
+      continue;
+    }
+    if (l.includes('🌃')) {
+      r.cidade = linha.replace(/.*🌃\s*\|\s*/, '').trim();
+      continue;
+    }
+    if (l.includes('💸') || (l.includes('total') && l.includes('|'))) {
+      r.total = extrairMoeda(linha);
+      r.totalTexto = formatarMoeda(r.total);
+      continue;
+    }
+  }
+
+  if (!r.beneficiario && !r.chavePix && !r.total) return null;
+  return r;
+}
+
+function processar() {
+  const texto = document.getElementById('inputText').value.trim();
+  if (!texto) return;
+
+  const linhas = texto.split('\n');
+  const blocos = [];
+  let atual = [];
+  let solAtual = '';
+
+  for (const linha of linhas) {
+    const l = linha.trim();
+    const isSol = l.match(/^[A-ZÀ-Ú][^|🔑💳👤🪛🌃📹👷💸🚗\n]*:$/) && !l.includes('|');
+    if (isSol && atual.length > 0) {
+      blocos.push({ solicitante: solAtual, conteudo: atual.join('\n') });
+      atual = [l];
+      solAtual = l.replace(/:$/, '').trim();
+    } else {
+      if (isSol) solAtual = l.replace(/:$/, '').trim();
+      atual.push(l);
+    }
+  }
+  if (atual.length > 0) blocos.push({ solicitante: solAtual, conteudo: atual.join('\n') });
+
+  dados = [];
+  for (const b of blocos) {
+    const subs = b.conteudo.split(/\n{2,}/);
+    for (const sb of subs) {
+      if (!sb.trim()) continue;
+      let txt = sb.trim();
+      if (!txt.match(/^[A-ZÀ-Ú]/)) txt = b.solicitante + ':\n' + txt;
+      const r = processarBloco(txt);
+      if (r) { if (!r.solicitante) r.solicitante = b.solicitante; dados.push(r); }
+    }
+  }
+
+  renderizar();
+}
+
+function renderizar() {
+  const rs = document.getElementById('resultSection');
+  const es = document.getElementById('emptyState');
+
+  if (!dados.length) {
+    rs.classList.add('hidden');
+    es.classList.remove('hidden');
+    return;
+  }
+
+  es.classList.add('hidden');
+  rs.classList.remove('hidden');
+
+  const soma = dados.reduce((a, d) => a + d.total, 0);
+  const qtd = dados.length;
+
+  document.getElementById('countBadge').textContent = qtd + ' registro' + (qtd > 1 ? 's' : '');
+
+  document.getElementById('statsRow').innerHTML = `
+    <div class="stat"><div class="stat-label">Total a pagar</div><div class="stat-value">${formatarMoeda(soma)}</div></div>
+    <div class="stat"><div class="stat-label">Ordens</div><div class="stat-value">${qtd}</div></div>
+    <div class="stat"><div class="stat-label">Média por ordem</div><div class="stat-value">${formatarMoeda(qtd ? soma / qtd : 0)}</div></div>
+  `;
+
+  document.getElementById('tableBody').innerHTML = dados.map((d, i) => {
+    const chave = [d.chavePix, d.banco].filter(Boolean).join(' · ') || '<span class="muted">—</span>';
+    return `<tr>
+      <td class="muted">${i + 1}</td>
+      <td><span class="tag">${d.solicitante || '—'}</span></td>
+      <td style="font-weight:600">${d.beneficiario || '<span class="muted">—</span>'}</td>
+      <td class="mono">${chave}</td>
+      <td>${d.cidade || '<span class="muted">—</span>'}</td>
+      <td style="color:var(--text2);max-width:180px">${d.descricao || '<span class="muted">—</span>'}</td>
+      <td class="total-cell">${d.totalTexto || '<span class="muted">—</span>'}</td>
+    </tr>`;
+  }).join('');
+}
+
+function mostrarToast(msg) {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.classList.add('show');
+  setTimeout(() => t.classList.remove('show'), 2200);
+}
+
+function copiarTabela() {
+  const headers = ['#', 'Solicitante', 'Beneficiário', 'Chave PIX', 'Banco', 'Cidade', 'Referência', 'Total'];
+  const rows = dados.map((d, i) => [i+1, d.solicitante, d.beneficiario, d.chavePix, d.banco, d.cidade, d.descricao, d.totalTexto]);
+  const txt = [headers, ...rows].map(r => r.join('\t')).join('\n');
+  navigator.clipboard.writeText(txt).then(() => mostrarToast('Tabela copiada!'));
+}
+
+function copiarCSV() {
+  const headers = ['Nº','Solicitante','Beneficiário','Chave PIX','Banco','Cidade','Referência','Total'];
+  const rows = dados.map((d, i) => [i+1, d.solicitante, d.beneficiario, d.chavePix, d.banco, d.cidade, d.descricao, d.totalTexto]);
+  const csv = [headers, ...rows].map(r => r.map(c => `"${(c||'').toString().replace(/"/g,'""')}"`).join(',')).join('\n');
+  navigator.clipboard.writeText(csv).then(() => mostrarToast('CSV copiado!'));
+}
+
+function copiarResumo() {
+  const soma = dados.reduce((a, d) => a + d.total, 0);
+  const data = new Date().toLocaleDateString('pt-BR');
+  let txt = `*PAGAMENTOS TERCEIRIZADOS — ${data}*\n`;
+  txt += `_${dados.length} ordem(ns) · Total: ${formatarMoeda(soma)}_\n\n`;
+  dados.forEach((d, i) => {
+    txt += `*${i+1}. ${d.beneficiario || '—'}*\n`;
+    if (d.chavePix) txt += `Chave: ${d.chavePix}\n`;
+    if (d.banco) txt += `Banco: ${d.banco}\n`;
+    if (d.cidade) txt += `Local: ${d.cidade}\n`;
+    if (d.descricao) txt += `Ref.: ${d.descricao}\n`;
+    txt += `Total: *${d.totalTexto}*\n\n`;
+  });
+  navigator.clipboard.writeText(txt).then(() => mostrarToast('Resumo copiado!'));
+}
+</script>
+</body>
+</html>
