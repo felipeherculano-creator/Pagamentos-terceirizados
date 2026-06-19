@@ -160,6 +160,7 @@ tbody tr:hover td{background:var(--surface2);}
     <div class="topbar-icon"><i class="ti ti-coin"></i></div>
     <h1>Pagamentos Terceirizados</h1>
     <div class="topbar-user">Olá, <span id="nomeUsuario"></span></div>
+    <button class="btn-sair hidden" id="btnAtivarNotif" onclick="ativarNotifManual()" style="margin-right:4px"><i class="ti ti-bell"></i> Ativar avisos</button>
     <button class="btn-sair" onclick="sair()"><i class="ti ti-logout"></i> Sair</button>
   </div>
 
@@ -242,6 +243,7 @@ tbody tr:hover td{background:var(--surface2);}
         </select>
       </div>
       <button class="primary" onclick="gerarRelatorio()"><i class="ti ti-search"></i> Gerar</button>
+      <button id="btnApagarTudoHistorico" class="danger-btn hidden" onclick="confirmarApagarHistoricoCompleto()" style="margin-left:auto"><i class="ti ti-alert-triangle"></i> Apagar todo o histórico</button>
     </div>
 
     <div id="relatorioResultado" class="hidden">
@@ -286,10 +288,14 @@ const db = getFirestore(fireApp);
 // ═══════════════════════════════════════════════════
 // USUÁRIOS — altere aqui os logins e senhas
 const USUARIOS = {
-  'admin':      { senha: 'admin123',      nome: 'Admin',      perfil: 'admin' },
-  'vanessa':    { senha: 'vanessa123',    nome: 'Vanessa',    perfil: 'operacional' },
-  'izadora':    { senha: 'izadora123',    nome: 'Izadora',    perfil: 'operacional' },
-  'financeiro': { senha: 'financeiro123', nome: 'Financeiro', perfil: 'financeiro' },
+  'admin':            { senha: 'Herc!@#17',          nome: 'Admin',            perfil: 'admin' },
+  'felipeherculano':  { senha: 'Felipe!@#17',        nome: 'Felipe',           perfil: 'admin' },
+  'thiagoherculano':  { senha: 'Thiago!@#26',        nome: 'Thiago',           perfil: 'admin' },
+  'catarinahissa':    { senha: 'Catarina!@#26',      nome: 'Catarina',         perfil: 'financeiro' },
+  'vanessaribeiro':   { senha: 'vanessaribeiro!@#135', nome: 'Vanessa',        perfil: 'operacional' },
+  'izadoraalves':     { senha: 'izadoraalves!@#357',   nome: 'Izadora',        perfil: 'operacional' },
+  'taynasantos':      { senha: 'taynasantos!@#579',    nome: 'Tayna',          perfil: 'operacional' },
+  'joaopaulo':        { senha: 'joaopaulo!@#790',      nome: 'João Paulo',     perfil: 'operacional' },
 };
 // ═══════════════════════════════════════════════════
 
@@ -345,13 +351,80 @@ function iniciarApp(){
   // Oculta aba relatório para operacional
   if(usuarioAtual.perfil==='operacional') document.getElementById('tab-relatorio').style.display='none';
 
+  // Botão de apagar todo o histórico — só admin
+  if(usuarioAtual.perfil==='admin') document.getElementById('btnApagarTudoHistorico').classList.remove('hidden');
+
+  // Pede permissão de notificação (financeiro e admin)
+  if(usuarioAtual.perfil==='financeiro' || usuarioAtual.perfil==='admin'){
+    pedirPermissaoNotificacao();
+  }
+
   // Escuta pagamentos de HOJE em tempo real
   const hoje = dataHoje();
   const q = query(collection(db,'pagamentos'), where('data','==',hoje), orderBy('criadoEm','asc'));
+  let primeiraCarga = true;
   onSnapshot(q, snap=>{
-    pagamentosHoje = snap.docs.map(d=>({id:d.id,...d.data()}));
+    const novosCache = snap.docs.map(d=>({id:d.id,...d.data()}));
+
+    // Detecta pagamentos novos (comparando IDs) e notifica — só depois da primeira carga
+    if(!primeiraCarga && (usuarioAtual.perfil==='financeiro' || usuarioAtual.perfil==='admin')){
+      const idsAntigos = new Set(pagamentosHoje.map(p=>p.id));
+      const novos = novosCache.filter(p=>!idsAntigos.has(p.id));
+      if(novos.length>0) notificarNovosPagamentos(novos);
+    }
+
+    pagamentosHoje = novosCache;
     renderizarHoje();
+    primeiraCarga = false;
   });
+}
+
+// ═══════════════ NOTIFICAÇÕES ═══════════════
+function pedirPermissaoNotificacao(){
+  if(!('Notification' in window)){ return; }
+  atualizarBotaoNotif();
+  if(Notification.permission === 'default'){
+    setTimeout(()=>{ Notification.requestPermission().then(atualizarBotaoNotif); }, 800);
+  }
+}
+
+function atualizarBotaoNotif(){
+  const btn = document.getElementById('btnAtivarNotif');
+  if(!('Notification' in window)){ btn.classList.add('hidden'); return; }
+  if(Notification.permission === 'granted'){
+    btn.classList.add('hidden');
+  } else {
+    btn.classList.remove('hidden');
+    btn.innerHTML = Notification.permission==='denied'
+      ? '<i class="ti ti-bell-off"></i> Avisos bloqueados'
+      : '<i class="ti ti-bell"></i> Ativar avisos';
+  }
+}
+
+window.ativarNotifManual = function(){
+  if(Notification.permission === 'denied'){
+    mostrarToast('Bloqueado pelo navegador. Clique no ícone de cadeado/site na barra de endereço e permita notificações.');
+    return;
+  }
+  Notification.requestPermission().then(atualizarBotaoNotif);
+};
+
+function notificarNovosPagamentos(novos){
+  if(!('Notification' in window) || Notification.permission !== 'granted') return;
+  const verValores = usuarioAtual.perfil==='admin'||usuarioAtual.perfil==='financeiro';
+
+  if(novos.length === 1){
+    const p = novos[0];
+    const corpo = verValores
+      ? `${p.beneficiario||'—'} · ${p.totalTexto||''} · enviado por ${p.enviadoPor||'—'}`
+      : `${p.beneficiario||'—'} · enviado por ${p.enviadoPor||'—'}`;
+    new Notification('💰 Novo pagamento recebido', { body: corpo, tag: 'pagamento-'+p.id });
+  } else {
+    new Notification(`💰 ${novos.length} novos pagamentos recebidos`, {
+      body: 'Enviados por: ' + [...new Set(novos.map(p=>p.enviadoPor))].join(', '),
+      tag: 'pagamentos-lote-'+Date.now()
+    });
+  }
 }
 
 const sessao=sessionStorage.getItem('usuario');
@@ -401,6 +474,26 @@ window.confirmarLimpeza=async function(){
   snap.docs.forEach(d=>batch.delete(d.ref));
   await batch.commit();
   mostrarToast('Pagamentos de hoje apagados.');
+};
+
+window.confirmarApagarHistoricoCompleto=async function(){
+  const passo1=confirm('⚠️ Isso vai apagar TODOS os pagamentos já registrados no sistema (de todas as datas), incluindo o histórico usado nos relatórios. Esta ação NÃO pode ser desfeita.\n\nDeseja continuar?');
+  if(!passo1)return;
+  const digitado=prompt('Para confirmar, digite EXCLUIR (em letras maiúsculas):');
+  if(digitado!=='EXCLUIR'){ mostrarToast('Operação cancelada.'); return; }
+
+  mostrarToast('Apagando todo o histórico...');
+  const snap=await getDocs(collection(db,'pagamentos'));
+  // Apaga em lotes de 450 (limite do Firestore é 500 por batch)
+  const docs=snap.docs;
+  for(let i=0;i<docs.length;i+=450){
+    const batch=writeBatch(db);
+    docs.slice(i,i+450).forEach(d=>batch.delete(d.ref));
+    await batch.commit();
+  }
+  mostrarToast(`Histórico completo apagado (${docs.length} registro(s)).`);
+  document.getElementById('relatorioResultado').classList.add('hidden');
+  document.getElementById('relatorioVazio').classList.add('hidden');
 };
 
 // RENDER HOJE
