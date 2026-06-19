@@ -365,12 +365,16 @@ function iniciarApp(){
   let primeiraCarga = true;
   onSnapshot(q, snap=>{
     const novosCache = snap.docs.map(d=>({id:d.id,...d.data()}));
+    console.log('[NOTIF DEBUG] snapshot recebido. primeiraCarga=',primeiraCarga,'qtd=',novosCache.length,'fromCache=',snap.metadata.fromCache);
 
     // Detecta pagamentos novos (comparando IDs) e notifica — só depois da primeira carga
     if(!primeiraCarga && (usuarioAtual.perfil==='financeiro' || usuarioAtual.perfil==='admin')){
       const idsAntigos = new Set(pagamentosHoje.map(p=>p.id));
       const novos = novosCache.filter(p=>!idsAntigos.has(p.id));
+      console.log('[NOTIF DEBUG] idsAntigos=',[...idsAntigos],'novos detectados=',novos.length);
       if(novos.length>0) notificarNovosPagamentos(novos);
+    } else {
+      console.log('[NOTIF DEBUG] pulou verificação. primeiraCarga=',primeiraCarga,'perfil=',usuarioAtual.perfil);
     }
 
     pagamentosHoje = novosCache;
