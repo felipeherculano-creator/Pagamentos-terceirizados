@@ -99,6 +99,9 @@ tbody tr:hover td{background:var(--surface2);}
 .muted{color:var(--text3);}
 .pago-badge{font-size:11px;font-weight:600;padding:2px 8px;border-radius:20px;background:var(--green-bg);color:var(--green);}
 .pendente-badge{font-size:11px;font-weight:600;padding:2px 8px;border-radius:20px;background:var(--amber-bg);color:var(--amber);}
+.recusado-badge{font-size:11px;font-weight:600;padding:2px 8px;border-radius:20px;background:var(--red-bg);color:var(--red);}
+.aprovado-badge{font-size:11px;font-weight:600;padding:2px 8px;border-radius:20px;background:var(--accent-bg);color:var(--accent-text);}
+.motivo-recusa{font-size:11px;color:var(--red);margin-top:3px;font-style:italic;}
 .btn-pago{padding:4px 10px;font-size:11px;border-radius:20px;}
 .hidden{display:none;}
 .empty-state{text-align:center;padding:3rem 1rem;color:var(--text2);}
@@ -194,6 +197,7 @@ tbody tr:hover td{background:var(--surface2);}
     <div class="stats-row">
       <div class="stat" id="statTotalCard"><div class="stat-label">Total do dia</div><div class="stat-value" id="statTotal">R$ 0,00</div></div>
       <div class="stat"><div class="stat-label">Ordens</div><div class="stat-value" id="statQtd">0</div></div>
+      <div class="stat"><div class="stat-label">Aguard. aprovação</div><div class="stat-value" id="statAguardando">0</div></div>
       <div class="stat"><div class="stat-label">Pagos</div><div class="stat-value" id="statPagos">0</div></div>
     </div>
 
@@ -202,11 +206,11 @@ tbody tr:hover td{background:var(--surface2);}
         <thead>
           <tr>
             <th>#</th><th>Enviado por</th><th>Beneficiário</th><th>Chave PIX / Banco</th>
-            <th>Cidade / UF</th><th>Referência</th><th class="col-total">Total</th><th>Status</th>
+            <th>Cidade / UF</th><th>Referência</th><th class="col-total">Total</th><th>Aprovação</th><th>Pagamento</th>
           </tr>
         </thead>
         <tbody id="tableBody">
-          <tr><td colspan="8" class="loading-cell"><i class="ti ti-loader" style="animation:spin 1s linear infinite;display:inline-block;margin-right:6px"></i>Carregando...</td></tr>
+          <tr><td colspan="9" class="loading-cell"><i class="ti ti-loader" style="animation:spin 1s linear infinite;display:inline-block;margin-right:6px"></i>Carregando...</td></tr>
         </tbody>
       </table>
     </div>
@@ -365,16 +369,11 @@ function iniciarApp(){
   let primeiraCarga = true;
   onSnapshot(q, snap=>{
     const novosCache = snap.docs.map(d=>({id:d.id,...d.data()}));
-    console.log('[NOTIF DEBUG] snapshot recebido. primeiraCarga=',primeiraCarga,'qtd=',novosCache.length,'fromCache=',snap.metadata.fromCache);
 
-    // Detecta pagamentos novos (comparando IDs) e notifica — só depois da primeira carga
     if(!primeiraCarga && (usuarioAtual.perfil==='financeiro' || usuarioAtual.perfil==='admin')){
       const idsAntigos = new Set(pagamentosHoje.map(p=>p.id));
       const novos = novosCache.filter(p=>!idsAntigos.has(p.id));
-      console.log('[NOTIF DEBUG] idsAntigos=',[...idsAntigos],'novos detectados=',novos.length);
       if(novos.length>0) notificarNovosPagamentos(novos);
-    } else {
-      console.log('[NOTIF DEBUG] pulou verificação. primeiraCarga=',primeiraCarga,'perfil=',usuarioAtual.perfil);
     }
 
     pagamentosHoje = novosCache;
@@ -452,6 +451,7 @@ window.extrairESalvar=async function(){
   for(const p of lista){
     await addDoc(collection(db,'pagamentos'),{
       ...p, enviadoPor:usuarioAtual.nome, pago:false,
+      aprovacao:'pendente', motivoRecusa:'',
       data:hoje, criadoEm:new Date().toISOString()
     });
   }
@@ -460,8 +460,29 @@ window.extrairESalvar=async function(){
 };
 
 window.marcarPago=async function(id,pago){
+  const item = pagamentosHoje.find(p=>p.id===id) || dadosRelatorio.find(p=>p.id===id);
+  if(!pago && item && item.aprovacao!=='aprovado'){
+    mostrarToast('Este pagamento ainda não foi aprovado pelo admin.');
+    return;
+  }
   await updateDoc(doc(db,'pagamentos',id),{pago:!pago,pagoPor:usuarioAtual.nome,pagoEm:new Date().toISOString()});
   mostrarToast(!pago?'Marcado como pago!':'Desmarcado.');
+};
+
+window.aprovarPagamento=async function(id){
+  await updateDoc(doc(db,'pagamentos',id),{aprovacao:'aprovado',motivoRecusa:'',aprovadoPor:usuarioAtual.nome,aprovadoEm:new Date().toISOString()});
+  mostrarToast('Pagamento aprovado!');
+};
+
+window.recusarPagamento=async function(id){
+  const motivo = prompt('Motivo da recusa (opcional):') || '';
+  await updateDoc(doc(db,'pagamentos',id),{aprovacao:'recusado',motivoRecusa:motivo,aprovadoPor:usuarioAtual.nome,aprovadoEm:new Date().toISOString()});
+  mostrarToast('Pagamento recusado.');
+};
+
+window.reverterAprovacao=async function(id){
+  await updateDoc(doc(db,'pagamentos',id),{aprovacao:'pendente',motivoRecusa:''});
+  mostrarToast('Voltou para aguardando aprovação.');
 };
 
 window.excluirPagamento=async function(id){
@@ -503,22 +524,53 @@ window.confirmarApagarHistoricoCompleto=async function(){
 // RENDER HOJE
 function renderizarHoje(){
   const verValores=usuarioAtual.perfil==='admin'||usuarioAtual.perfil==='financeiro';
-  const podeMarcar=usuarioAtual.perfil==='financeiro'||usuarioAtual.perfil==='admin';
+  const podeAprovar=usuarioAtual.perfil==='admin';
+  const podePagar=usuarioAtual.perfil==='financeiro'||usuarioAtual.perfil==='admin';
   const podeExcluir=usuarioAtual.perfil==='admin';
   const dados=pagamentosHoje;
   const tbody=document.getElementById('tableBody');
 
   if(!dados.length){
-    tbody.innerHTML=`<tr><td colspan="${verValores?8:7}"><div class="empty-state"><i class="ti ti-inbox"></i><p>Nenhum pagamento enviado hoje.</p></div></td></tr>`;
+    tbody.innerHTML=`<tr><td colspan="${verValores?9:8}"><div class="empty-state"><i class="ti ti-inbox"></i><p>Nenhum pagamento enviado hoje.</p></div></td></tr>`;
     atualizarStats([]);return;
   }
 
   tbody.innerHTML=dados.map((d,i)=>{
     const chave=[d.chavePix,d.banco].filter(Boolean).join(' · ')||'—';
-    const status=d.pago?'<span class="pago-badge"><i class="ti ti-check" style="font-size:10px"></i> Pago</span>':'<span class="pendente-badge">Pendente</span>';
-    const btnPago=podeMarcar?`<button class="btn-pago ${d.pago?'danger-btn':'primary'}" onclick="marcarPago('${d.id}',${d.pago})" style="margin-left:6px">${d.pago?'Desfazer':'✓ Pagar'}</button>`:'';
+    const aprovacao = d.aprovacao || 'pendente';
+
+    // Coluna Aprovação
+    let colAprovacao = '';
+    if(aprovacao==='aprovado'){
+      colAprovacao = '<span class="aprovado-badge"><i class="ti ti-check" style="font-size:10px"></i> Aprovado</span>';
+      if(podeAprovar) colAprovacao += `<button class="ghost" style="padding:3px 8px;font-size:11px;margin-left:6px" onclick="reverterAprovacao('${d.id}')">Desfazer</button>`;
+    } else if(aprovacao==='recusado'){
+      colAprovacao = '<span class="recusado-badge"><i class="ti ti-x" style="font-size:10px"></i> Recusado</span>';
+      if(d.motivoRecusa) colAprovacao += `<div class="motivo-recusa">${d.motivoRecusa}</div>`;
+      if(podeAprovar) colAprovacao += `<button class="ghost" style="padding:3px 8px;font-size:11px;margin-left:6px;margin-top:3px" onclick="reverterAprovacao('${d.id}')">Reabrir</button>`;
+    } else {
+      colAprovacao = '<span class="pendente-badge">Aguardando</span>';
+      if(podeAprovar) colAprovacao += `
+        <button class="btn-pago primary" style="margin-left:6px" onclick="aprovarPagamento('${d.id}')">✓ Aprovar</button>
+        <button class="btn-pago danger-btn" style="margin-left:4px" onclick="recusarPagamento('${d.id}')">✗ Recusar</button>`;
+    }
+
+    // Coluna Pagamento
+    let colPagamento = '';
+    if(d.pago){
+      colPagamento = '<span class="pago-badge"><i class="ti ti-check" style="font-size:10px"></i> Pago</span>';
+      if(podePagar) colPagamento += `<button class="btn-pago danger-btn" style="margin-left:6px" onclick="marcarPago('${d.id}',${d.pago})">Desfazer</button>`;
+    } else if(aprovacao==='aprovado'){
+      colPagamento = podePagar ? `<button class="btn-pago primary" onclick="marcarPago('${d.id}',${d.pago})">✓ Pagar</button>` : '<span class="muted">—</span>';
+    } else if(aprovacao==='recusado'){
+      colPagamento = '<span class="muted">Bloqueado</span>';
+    } else {
+      colPagamento = '<span class="muted">Aguardando aprovação</span>';
+    }
+
     const btnDel=podeExcluir?`<button class="ghost" style="padding:4px 8px;font-size:11px;margin-left:4px" onclick="excluirPagamento('${d.id}')"><i class="ti ti-trash"></i></button>`:'';
     const tdTotal=verValores?`<td class="total-cell">${d.totalTexto||'—'}</td>`:'';
+
     return `<tr>
       <td class="muted">${i+1}</td>
       <td><span class="tag">${d.enviadoPor||'—'}</span></td>
@@ -527,7 +579,8 @@ function renderizarHoje(){
       <td>${d.cidade||'<span class="muted">—</span>'}</td>
       <td style="color:var(--text2);max-width:160px;font-size:12px">${d.descricao||'<span class="muted">—</span>'}</td>
       ${tdTotal}
-      <td style="white-space:nowrap">${status}${btnPago}${btnDel}</td>
+      <td style="white-space:nowrap">${colAprovacao}</td>
+      <td style="white-space:nowrap">${colPagamento}${btnDel}</td>
     </tr>`;
   }).join('');
   atualizarStats(dados);
@@ -538,6 +591,7 @@ function atualizarStats(dados){
   const soma=dados.reduce((a,d)=>a+(d.total||0),0);
   if(verValores) document.getElementById('statTotal').textContent=fmtMoeda(soma);
   document.getElementById('statQtd').textContent=dados.length;
+  document.getElementById('statAguardando').textContent=dados.filter(d=>(d.aprovacao||'pendente')==='pendente').length;
   document.getElementById('statPagos').textContent=dados.filter(d=>d.pago).length;
   document.getElementById('countBadge').textContent=dados.length;
 }
@@ -636,7 +690,12 @@ function renderizarRelatorio(dados, agrupar, ini, fim){
   }).map(([chave,itens])=>{
     const subtotal=itens.reduce((a,d)=>a+(d.total||0),0);
     const tituloChave=agrupar==='data'?fmtData(chave):chave;
-    const linhas=itens.map((d,i)=>`
+    const linhas=itens.map((d,i)=>{
+      const aprov = d.aprovacao||'pendente';
+      const badgeAprov = aprov==='aprovado' ? '<span class="aprovado-badge">Aprovado</span>'
+        : aprov==='recusado' ? '<span class="recusado-badge">Recusado</span>'
+        : '<span class="pendente-badge">Aguardando</span>';
+      return `
       <tr>
         <td class="muted">${i+1}</td>
         <td>${fmtData(d.data)}</td>
@@ -645,8 +704,10 @@ function renderizarRelatorio(dados, agrupar, ini, fim){
         <td>${d.cidade||'—'}</td>
         <td style="color:var(--text2);max-width:160px;font-size:11px">${d.descricao||'—'}</td>
         <td class="total-cell">${d.totalTexto||'—'}</td>
+        <td>${badgeAprov}</td>
         <td>${d.pago?'<span class="pago-badge">Pago</span>':'<span class="pendente-badge">Pendente</span>'}</td>
-      </tr>`).join('');
+      </tr>`;
+    }).join('');
     return `<div class="grupo-card">
       <div class="grupo-header" onclick="toggleGrupo(this)">
         <div>
@@ -662,7 +723,7 @@ function renderizarRelatorio(dados, agrupar, ini, fim){
       <div class="grupo-body">
         <div class="table-wrap" style="border:none;border-radius:0;margin:0">
           <table>
-            <thead><tr><th>#</th><th>Data</th><th>Beneficiário</th><th>Solicitante</th><th>Cidade</th><th>Referência</th><th>Total</th><th>Status</th></tr></thead>
+            <thead><tr><th>#</th><th>Data</th><th>Beneficiário</th><th>Solicitante</th><th>Cidade</th><th>Referência</th><th>Total</th><th>Aprovação</th><th>Pagamento</th></tr></thead>
             <tbody>${linhas}</tbody>
           </table>
         </div>
