@@ -187,25 +187,25 @@ tbody tr:hover td{background:var(--surface2);}
     </div>
 
     <div class="section-header">
-      <div class="section-title"><i class="ti ti-list-check"></i> Pagamentos de hoje <span class="badge" id="countBadge">0</span></div>
+      <div class="section-title"><i class="ti ti-list-check"></i> Pagamentos pendentes <span class="badge" id="countBadge">0</span></div>
       <div style="display:flex;gap:8px;flex-wrap:wrap;">
         <button onclick="copiarResumo()"><i class="ti ti-brand-whatsapp"></i> Copiar resumo</button>
-        <button id="btnLimparTudo" class="danger-btn hidden" onclick="confirmarLimpeza()"><i class="ti ti-trash"></i> Limpar hoje</button>
+        <button id="btnLimparTudo" class="danger-btn hidden" onclick="confirmarLimpeza()"><i class="ti ti-trash"></i> Limpar pendentes</button>
       </div>
     </div>
 
     <div class="stats-row">
-      <div class="stat" id="statTotalCard"><div class="stat-label">Total do dia</div><div class="stat-value" id="statTotal">R$ 0,00</div></div>
+      <div class="stat" id="statTotalCard"><div class="stat-label">Total pendente</div><div class="stat-value" id="statTotal">R$ 0,00</div></div>
       <div class="stat"><div class="stat-label">Ordens</div><div class="stat-value" id="statQtd">0</div></div>
       <div class="stat"><div class="stat-label">Aguard. aprovação</div><div class="stat-value" id="statAguardando">0</div></div>
-      <div class="stat"><div class="stat-label">Pagos</div><div class="stat-value" id="statPagos">0</div></div>
+      <div class="stat"><div class="stat-label">Pagos hoje</div><div class="stat-value" id="statPagos">0</div></div>
     </div>
 
     <div class="table-wrap">
       <table>
         <thead>
           <tr>
-            <th>#</th><th>Enviado por</th><th>Beneficiário</th><th>Chave PIX / Banco</th>
+            <th>#</th><th>Data</th><th>Enviado por</th><th>Beneficiário</th><th>Chave PIX / Banco</th>
             <th>Cidade / UF</th><th>Referência</th><th class="col-total">Total</th><th>Aprovação</th><th>Pagamento</th>
           </tr>
         </thead>
@@ -363,9 +363,8 @@ function iniciarApp(){
     pedirPermissaoNotificacao();
   }
 
-  // Escuta pagamentos de HOJE em tempo real
-  const hoje = dataHoje();
-  const q = query(collection(db,'pagamentos'), where('data','==',hoje), orderBy('criadoEm','asc'));
+  // Escuta TODOS os pagamentos não pagos (de qualquer data) em tempo real
+  const q = query(collection(db,'pagamentos'), where('pago','==',false), orderBy('criadoEm','asc'));
   let primeiraCarga = true;
   onSnapshot(q, snap=>{
     const novosCache = snap.docs.map(d=>({id:d.id,...d.data()}));
@@ -379,6 +378,13 @@ function iniciarApp(){
     pagamentosHoje = novosCache;
     renderizarHoje();
     primeiraCarga = false;
+  });
+
+  // Contagem de pagos hoje (separado, só para o card de estatística)
+  const hoje = dataHoje();
+  const qPagosHoje = query(collection(db,'pagamentos'), where('data','==',hoje), where('pago','==',true));
+  onSnapshot(qPagosHoje, snap=>{
+    document.getElementById('statPagos').textContent = snap.size;
   });
 }
 
@@ -492,13 +498,12 @@ window.excluirPagamento=async function(id){
 };
 
 window.confirmarLimpeza=async function(){
-  if(!confirm('Apagar todos os pagamentos de HOJE?'))return;
-  const hoje=dataHoje();
-  const snap=await getDocs(query(collection(db,'pagamentos'),where('data','==',hoje)));
+  if(!confirm('Apagar TODOS os pagamentos pendentes (não pagos), de qualquer data?'))return;
+  const snap=await getDocs(query(collection(db,'pagamentos'),where('pago','==',false)));
   const batch=writeBatch(db);
   snap.docs.forEach(d=>batch.delete(d.ref));
   await batch.commit();
-  mostrarToast('Pagamentos de hoje apagados.');
+  mostrarToast('Pagamentos pendentes apagados.');
 };
 
 window.confirmarApagarHistoricoCompleto=async function(){
@@ -531,7 +536,7 @@ function renderizarHoje(){
   const tbody=document.getElementById('tableBody');
 
   if(!dados.length){
-    tbody.innerHTML=`<tr><td colspan="${verValores?9:8}"><div class="empty-state"><i class="ti ti-inbox"></i><p>Nenhum pagamento enviado hoje.</p></div></td></tr>`;
+    tbody.innerHTML=`<tr><td colspan="${verValores?10:9}"><div class="empty-state"><i class="ti ti-inbox"></i><p>Nenhum pagamento pendente. Tudo certo por aqui!</p></div></td></tr>`;
     atualizarStats([]);return;
   }
 
@@ -555,13 +560,10 @@ function renderizarHoje(){
         <button class="btn-pago danger-btn" style="margin-left:4px" onclick="recusarPagamento('${d.id}')">✗ Recusar</button>`;
     }
 
-    // Coluna Pagamento
+    // Coluna Pagamento (aqui só existem pagamentos NÃO pagos, pois pagos saem da lista)
     let colPagamento = '';
-    if(d.pago){
-      colPagamento = '<span class="pago-badge"><i class="ti ti-check" style="font-size:10px"></i> Pago</span>';
-      if(podePagar) colPagamento += `<button class="btn-pago danger-btn" style="margin-left:6px" onclick="marcarPago('${d.id}',${d.pago})">Desfazer</button>`;
-    } else if(aprovacao==='aprovado'){
-      colPagamento = podePagar ? `<button class="btn-pago primary" onclick="marcarPago('${d.id}',${d.pago})">✓ Pagar</button>` : '<span class="muted">—</span>';
+    if(aprovacao==='aprovado'){
+      colPagamento = podePagar ? `<button class="btn-pago primary" onclick="marcarPago('${d.id}',false)">✓ Pagar</button>` : '<span class="muted">—</span>';
     } else if(aprovacao==='recusado'){
       colPagamento = '<span class="muted">Bloqueado</span>';
     } else {
@@ -573,6 +575,7 @@ function renderizarHoje(){
 
     return `<tr>
       <td class="muted">${i+1}</td>
+      <td style="font-size:12px;color:var(--text2)">${fmtData(d.data)}</td>
       <td><span class="tag">${d.enviadoPor||'—'}</span></td>
       <td style="font-weight:600">${d.beneficiario||'<span class="muted">—</span>'}</td>
       <td class="mono">${chave}</td>
@@ -592,7 +595,6 @@ function atualizarStats(dados){
   if(verValores) document.getElementById('statTotal').textContent=fmtMoeda(soma);
   document.getElementById('statQtd').textContent=dados.length;
   document.getElementById('statAguardando').textContent=dados.filter(d=>(d.aprovacao||'pendente')==='pendente').length;
-  document.getElementById('statPagos').textContent=dados.filter(d=>d.pago).length;
   document.getElementById('countBadge').textContent=dados.length;
 }
 
