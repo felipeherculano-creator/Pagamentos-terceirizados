@@ -607,6 +607,8 @@ window.imprimirAprovados = function(){
   win.document.close();
   win.onload = () => win.print();
 };
+
+window.confirmarLimpeza=async function(){
   if(!confirm('Apagar TODOS os pagamentos pendentes (não pagos), de qualquer data?'))return;
   const snap=await getDocs(query(collection(db,'pagamentos'),where('pago','==',false)));
   const batch=writeBatch(db);
